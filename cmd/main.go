@@ -42,7 +42,18 @@ Features:
 - Configurable output options
 - Clean markdown documentation generation`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg = &config.Config{}
+		cfg = &config.Config{
+			Path:          "./",
+			Output:        "code.md",
+			Languages:     []string{},
+			Exclude:       []string{},
+			Verbose:       false,
+			IncludeHidden: false,
+			NoStructure:   false,
+			NoCode:        false,
+			NoAPI:         false,
+			ExcludeTests:  true,
+		}
 
 		if cmd.Flags().Changed("path") {
 			cfg.Path, _ = cmd.Flags().GetString("path")
@@ -70,6 +81,9 @@ Features:
 		}
 		if cmd.Flags().Changed("no-api") {
 			cfg.NoAPI, _ = cmd.Flags().GetBool("no-api")
+		}
+		if cmd.Flags().Changed("exclude-tests") {
+			cfg.ExcludeTests, _ = cmd.Flags().GetBool("exclude-tests")
 		}
 
 		if err := cfg.Validate(); err != nil {
@@ -106,7 +120,7 @@ func run() error {
 		log.Printf("Analyzing project at: %s", absPath)
 	}
 
-	files, err := utils.ScanDirectory(absPath, cfg.Exclude)
+	files, err := utils.ScanDirectory(absPath, cfg.Exclude, cfg.ExcludeTests)
 	if err != nil {
 		return fmt.Errorf("failed to scan directory: %w", err)
 	}
@@ -193,7 +207,7 @@ func run() error {
 		log.Printf("Analyzed %d code elements", len(projectInfo.AllElements))
 	}
 
-	tree := utils.GenerateDirectoryTree(absPath, "")
+	tree := utils.GenerateDirectoryTree(absPath, "", cfg.ExcludeTests)
 	projectInfo.DirectoryTree = tree
 
 	gen := generator.NewGenerator()

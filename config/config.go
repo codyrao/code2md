@@ -19,6 +19,7 @@ type Config struct {
 	NoStructure   bool
 	NoCode        bool
 	NoAPI         bool
+	ExcludeTests  bool
 }
 
 var defaultConfig = Config{
@@ -31,6 +32,7 @@ var defaultConfig = Config{
 	NoStructure:   false,
 	NoCode:        false,
 	NoAPI:         false,
+	ExcludeTests:  true,
 }
 
 func NewConfig() *Config {
@@ -47,6 +49,7 @@ func (c *Config) AddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&c.NoStructure, "no-structure", defaultConfig.NoStructure, "Skip directory tree structure in output")
 	cmd.Flags().BoolVar(&c.NoCode, "no-code", defaultConfig.NoCode, "Skip including full code in output")
 	cmd.Flags().BoolVar(&c.NoAPI, "no-api", defaultConfig.NoAPI, "Skip API documentation section")
+	cmd.Flags().BoolVar(&c.ExcludeTests, "exclude-tests", defaultConfig.ExcludeTests, "Exclude test files and test functions")
 }
 
 func (c *Config) Validate() error {

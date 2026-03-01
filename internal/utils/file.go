@@ -25,6 +25,7 @@ func IsExcludedDir(dirName string, excludePatterns []string) bool {
 		"node_modules", "vendor", "bower_components", ".git", ".svn", ".hg",
 		"__pycache__", ".idea", ".vscode", "dist", "build", "target",
 		"out", "obj", "bin", ".gradle", "vendor", "public", "static",
+		"testdata", "test", "tests",
 	}
 
 	for _, excluded := range excludedDirs {
@@ -44,6 +45,30 @@ func IsExcludedDir(dirName string, excludePatterns []string) bool {
 
 func IsCodeFile(extension string, validExtensions map[string]bool) bool {
 	return validExtensions[strings.ToLower(extension)]
+}
+
+func IsTestFile(fileName string) bool {
+	fileName = strings.ToLower(fileName)
+	isTest := strings.Contains(fileName, "_test.go") ||
+		strings.Contains(fileName, "_test.js") ||
+		strings.Contains(fileName, "_test.ts") ||
+		strings.Contains(fileName, "_test.java") ||
+		strings.Contains(fileName, "_test.py") ||
+		strings.Contains(fileName, "_test.cpp") ||
+		strings.Contains(fileName, "_test.php") ||
+		strings.HasSuffix(fileName, ".test.go") ||
+		strings.HasSuffix(fileName, ".test.js") ||
+		strings.HasSuffix(fileName, ".test.ts") ||
+		strings.HasSuffix(fileName, ".test.java") ||
+		strings.HasSuffix(fileName, ".test.py") ||
+		strings.HasSuffix(fileName, ".test.cpp") ||
+		strings.HasSuffix(fileName, ".test.php") ||
+		strings.HasSuffix(fileName, "_spec.go") ||
+		strings.HasSuffix(fileName, "_spec.js") ||
+		strings.HasSuffix(fileName, "_spec.ts") ||
+		strings.HasSuffix(fileName, "_spec.java") ||
+		strings.HasSuffix(fileName, "_spec.py")
+	return isTest
 }
 
 func GetValidExtensions() map[string]bool {
@@ -87,7 +112,7 @@ func matchPattern(name, pattern string) bool {
 	return name == pattern
 }
 
-func ScanDirectory(rootPath string, excludePatterns []string) ([]string, error) {
+func ScanDirectory(rootPath string, excludePatterns []string, excludeTests bool) ([]string, error) {
 	var files []string
 
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
@@ -110,6 +135,13 @@ func ScanDirectory(rootPath string, excludePatterns []string) ([]string, error) 
 
 		if IsHiddenFile(relPath) {
 			return nil
+		}
+
+		if excludeTests {
+			fileName := filepath.Base(path)
+			if IsTestFile(fileName) {
+				return nil
+			}
 		}
 
 		ext := filepath.Ext(path)
@@ -225,7 +257,7 @@ func isEmptyLine(line string) bool {
 	return strings.TrimSpace(line) == ""
 }
 
-func GenerateDirectoryTree(rootPath string, prefix string) string {
+func GenerateDirectoryTree(rootPath string, prefix string, excludeTests bool) string {
 	var sb strings.Builder
 
 	files, err := os.ReadDir(rootPath)
@@ -246,6 +278,13 @@ func GenerateDirectoryTree(rootPath string, prefix string) string {
 		if file.IsDir() {
 			dirs = append(dirs, file)
 		} else {
+			if excludeTests {
+				fileName := file.Name()
+				isTest := IsTestFile(fileName)
+				if isTest {
+					continue
+				}
+			}
 			ext := filepath.Ext(file.Name())
 			if IsCodeFile(ext, GetValidExtensions()) {
 				codeFiles = append(codeFiles, file)
@@ -272,7 +311,7 @@ func GenerateDirectoryTree(rootPath string, prefix string) string {
 			newPrefix += "│   "
 		}
 
-		subtree := GenerateDirectoryTree(filepath.Join(rootPath, dir.Name()), newPrefix)
+		subtree := GenerateDirectoryTree(filepath.Join(rootPath, dir.Name()), newPrefix, excludeTests)
 		sb.WriteString(subtree)
 	}
 

@@ -166,8 +166,19 @@ func (g *Generator) initTemplates() {
 
 	g.templates = template.Must(g.templates.Funcs(
 		template.FuncMap{
-			"title": strings.Title,
-			"add":   func(a, b int) int { return a + b },
+			"title": func(s interface{}) string {
+				switch v := s.(type) {
+				case string:
+					return strings.Title(v)
+				case models.ElementType:
+					return strings.Title(string(v))
+				case models.Visibility:
+					return strings.Title(string(v))
+				default:
+					return ""
+				}
+			},
+			"add": func(a, b int) int { return a + b },
 		},
 	).Parse(templateText))
 }

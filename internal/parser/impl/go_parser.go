@@ -108,7 +108,20 @@ func (p *GoParser) Parse(filePath string, content []byte) (*models.FileInfo, err
 }
 
 func (p *GoParser) parseFuncDecl(node *ast.FuncDecl, fset *token.FileSet, filePath string) *models.CodeElement {
-	if node.Recv == nil && node.Name.IsExported() == false && node.Name.Name != "main" {
+	if node.Name == nil {
+		return nil
+	}
+
+	name := node.Name.Name
+
+	if strings.HasPrefix(name, "Test") ||
+		strings.HasPrefix(name, "Benchmark") ||
+		strings.HasPrefix(name, "Example") ||
+		strings.HasPrefix(name, "Fuzz") {
+		return nil
+	}
+
+	if node.Recv == nil && node.Name.IsExported() == false && name != "main" {
 		return nil
 	}
 
